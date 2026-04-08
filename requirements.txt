@@ -1,0 +1,6 @@
+openenv-core
+pydantic>=2.0
+fastapi
+uvicorn
+openai
+pytest
