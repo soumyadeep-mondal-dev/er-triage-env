@@ -1,0 +1,18 @@
+{
+  "classic_presentations": {
+    "task_id": "classic_presentations",
+    "score": 0.5631,
+    "cases_run": 8
+  },
+  "ambiguous_cases": {
+    "task_id": "ambiguous_cases",
+    "score": 0.4219,
+    "cases_run": 8
+  },
+  "masked_presentations": {
+    "task_id": "masked_presentations",
+    "score": 0.375,
+    "cases_run": 8
+  },
+  "overall_score": 0.4533
+}
