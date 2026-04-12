@@ -8,8 +8,8 @@ from client import ERTriageClient
 from models import TriageAction
 
 # ===== ENV VARIABLES (MANDATORY) =====
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+API_BASE_URL = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
+MODEL_NAME = os.getenv("MODEL_NAME") or "gpt-3.5-turbo"
 API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
 
 TASKS = [
