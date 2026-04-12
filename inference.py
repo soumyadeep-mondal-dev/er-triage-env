@@ -17,15 +17,17 @@ TASKS = [
 MAX_STEPS = 5
 ENV_BASE_URL = "https://deep-thinker-er-triage-env.hf.space"
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-3.5-turbo")
-API_KEY = os.environ.get("API_KEY", os.environ.get("HF_TOKEN"))
+API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
+HF_TOKEN = os.getenv("HF_TOKEN")
 
 BENCHMARK = "er_triage_env"
 
 
 # ===== SAFE OPENAI CLIENT =====
 try:
+    # Use API_KEY dynamically if injected by grading platform, fallback to HF_TOKEN
+    API_KEY = os.getenv("API_KEY") or HF_TOKEN
     if API_KEY:
         client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
     else:
