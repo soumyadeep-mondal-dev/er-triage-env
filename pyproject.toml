@@ -19,5 +19,5 @@ dependencies = [
 server = "server.app:main"
 
 [tool.setuptools]
-packages = ["server", "client"]
-py-modules = ["models"]
+packages = ["server"]
+py-modules = ["models", "client"]

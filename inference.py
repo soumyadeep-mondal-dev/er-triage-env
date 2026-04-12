@@ -17,9 +17,9 @@ TASKS = [
 MAX_STEPS = 5
 ENV_BASE_URL = "https://deep-thinker-er-triage-env.hf.space"
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-3.5-turbo")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-3.5-turbo")
+API_KEY = os.environ.get("API_KEY", os.environ.get("HF_TOKEN"))
 
 BENCHMARK = "er_triage_env"
 
@@ -53,7 +53,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]):
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
 
     print(
-        f"[END] success={str(success).lower()} steps={steps} score={score:.2f} rewards={rewards_str}",
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
 
@@ -65,20 +65,39 @@ def choose_action(obs) -> dict:
         care_pathway = "general"
         confidence = 0.7
 
-        if hasattr(obs, "symptoms") and "chest pain" in str(obs.symptoms).lower():
-            triage_level = 3  # red
-            care_pathway = "cardiac"
-            confidence = 0.9
+        if client:
+            import json
+            import re
+            prompt = f"Given the patient observation: {obs}, what is the triage level (int 1-5), care pathway (string), and confidence (float 0.0-1.0)? Return JSON with keys 'triage_level', 'care_pathway', 'confidence'."
+            
+            response = client.chat.completions.create(
+                model=MODEL_NAME,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            res_content = response.choices[0].message.content
+            json_match = re.search(r'\{.*\}', res_content, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(0))
+                triage_level = data.get("triage_level", triage_level)
+                care_pathway = data.get("care_pathway", care_pathway)
+                confidence = data.get("confidence", confidence)
+        else:
+            if hasattr(obs, "symptoms") and "chest pain" in str(obs.symptoms).lower():
+                triage_level = 3  # red
+                care_pathway = "cardiac"
+                confidence = 0.9
 
-        elif hasattr(obs, "vitals") and obs.vitals.get("heart_rate", 0) > 110:
-            triage_level = 2  # orange
-            care_pathway = "urgent"
-            confidence = 0.8
+            elif hasattr(obs, "vitals") and obs.vitals.get("heart_rate", 0) > 110:
+                triage_level = 2  # orange
+                care_pathway = "urgent"
+                confidence = 0.8
 
         return {
-            "triage_level": triage_level,
-            "care_pathway": care_pathway,
-            "confidence": confidence,
+            "triage_level": int(triage_level),
+            "care_pathway": str(care_pathway),
+            "confidence": float(confidence),
         }
 
     except Exception:
@@ -153,6 +172,15 @@ async def run_task(env_client, task_id: str):
         score = 0.0
 
     finally:
+        try:
+            if hasattr(env_client, "close"):
+                if asyncio.iscoroutinefunction(env_client.close):
+                    await env_client.close()
+                else:
+                    env_client.close()
+        except Exception as e:
+            print(f"[DEBUG] env.close() error: {e}", flush=True)
+            
         log_end(success, steps_taken, score, rewards)
 
     return score
